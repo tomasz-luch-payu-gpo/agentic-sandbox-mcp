@@ -43,4 +43,11 @@ ENV GIT_USER="Sandbox Agent"
 
 EXPOSE 3000
 
+# OCI image labels (used by Docker Desktop MCP catalog and toolkit)
+LABEL org.opencontainers.image.title="Agentic Sandbox MCP"
+LABEL org.opencontainers.image.description="MCP server for safely checking out and working on git repositories (GitLab, GitHub) inside an isolated Docker container"
+LABEL org.opencontainers.image.source="https://github.com/tomasz-luch-payu-gpo/agentic-sandbox-mcp"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.version="1.0.0"
+
 CMD ["node", "dist/index.js"]

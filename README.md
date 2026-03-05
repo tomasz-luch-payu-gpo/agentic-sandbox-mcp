@@ -178,6 +178,50 @@ docker run --rm -v mcp-sandbox-workspace:/ws -v $(pwd):/backup alpine \
 
 ---
 
+## Docker Desktop Gordon AI integration
+
+Docker Desktop 4.42+ includes **Gordon**, an AI agent that reads a `gordon-mcp.yml` file in your working directory to discover MCP servers.
+
+```bash
+# Build the image once
+docker build -t agentic-sandbox-mcp .
+
+# Drop into any project directory and start a Gordon session
+cp /path/to/agentic-sandbox-mcp/gordon-mcp.yml .
+docker ai "checkout https://github.com/org/repo and run the tests"
+```
+
+Gordon will automatically start the container, call the MCP tools, and stop it when done.
+
+---
+
+## Docker MCP Catalog (public registry)
+
+To submit to the official Docker MCP catalog (`hub.docker.com/catalogs/mcp`) so anyone can discover and run the server from Docker Desktop:
+
+1. **Push your image** to Docker Hub:
+   ```bash
+   docker build -t yourorg/agentic-sandbox-mcp:latest .
+   docker push yourorg/agentic-sandbox-mcp:latest
+   ```
+
+2. **Fork** [github.com/docker/mcp-registry](https://github.com/docker/mcp-registry)
+
+3. **Create** `servers/agentic-sandbox/` and copy in the three files from this repo:
+   ```
+   servers/agentic-sandbox/
+   ├── server.yaml    # registry metadata + env config
+   ├── tools.json     # tool listing shown in Docker Desktop UI
+   └── readme.md      # description shown in catalog (copy README.md)
+   ```
+   Update `image:` in `server.yaml` to `docker.io/yourorg/agentic-sandbox-mcp`.
+
+4. **Open a PR** — Docker team reviews, builds, signs, and publishes the image to `mcp/agentic-sandbox` on Docker Hub.
+
+Once published, users can enable it in Docker Desktop → Settings → MCP Toolkit with a single toggle, and all environment variables (`GITLAB_TOKEN`, `GITLAB_URL`, etc.) are filled in via the Docker Desktop UI.
+
+---
+
 ## Development
 
 ```bash

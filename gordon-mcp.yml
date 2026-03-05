@@ -1,0 +1,25 @@
+# gordon-mcp.yml — Docker Desktop Gordon AI integration
+#
+# Drop this file in any project directory and run `docker ai` to have Gordon
+# use the agentic-sandbox MCP server as a tool in that session.
+#
+# Build the image first:  docker build -t agentic-sandbox-mcp .
+#
+# Then start a session:   docker ai "checkout my-repo from gitlab and run the tests"
+
+services:
+  sandbox:
+    image: agentic-sandbox-mcp
+    volumes:
+      - mcp-sandbox-workspace:/workspace
+    environment:
+      WORKSPACE_DIR: /workspace
+      # Self-hosted GitLab (fill in your values or use .env)
+      GITLAB_URL: ${GITLAB_URL:-}
+      GITLAB_TOKEN: ${GITLAB_TOKEN:-}
+      GIT_EMAIL: ${GIT_EMAIL:-sandbox@localhost}
+      GIT_USER: ${GIT_USER:-Sandbox Agent}
+
+volumes:
+  mcp-sandbox-workspace:
+    name: mcp-sandbox-workspace
