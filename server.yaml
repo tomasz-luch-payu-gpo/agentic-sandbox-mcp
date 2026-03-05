@@ -1,0 +1,51 @@
+# server.yaml — Docker MCP Registry submission format
+#
+# To publish to the official Docker MCP catalog:
+#   1. Fork https://github.com/docker/mcp-registry
+#   2. Create servers/agentic-sandbox/  and place this file + tools.json + readme.md there
+#   3. Open a pull request — Docker team reviews and builds/signs the image
+#
+# For local/private use you can reference your own image directly.
+
+name: agentic-sandbox
+image: agentic-sandbox-mcp   # replace with docker.io/yourorg/agentic-sandbox-mcp after pushing to registry
+type: server
+
+meta:
+  category: development
+  tags:
+    - git
+    - gitlab
+    - github
+    - sandbox
+    - development
+    - filesystem
+
+about:
+  title: Agentic Sandbox
+  description: >
+    Safely check out git repositories (GitLab, GitHub, or any HTTPS remote) inside an
+    isolated Docker container and let AI agents work on them — read/write files,
+    run shell commands, manage branches — without touching the host OS.
+  icon: https://raw.githubusercontent.com/tomasz-luch-payu-gpo/agentic-sandbox-mcp/master/icon.png
+
+source:
+  project: https://github.com/tomasz-luch-payu-gpo/agentic-sandbox-mcp
+
+config:
+  secrets:
+    - name: gitlab.personal_access_token
+      env: GITLAB_TOKEN
+      example: glpat-xxxxxxxxxxxxxxxxxxxx
+
+  env:
+    - name: GITLAB_URL
+      example: https://gitlab.mycompany.com
+    - name: GIT_EMAIL
+      example: agent@example.com
+      value: sandbox@localhost
+    - name: GIT_USER
+      example: My Name
+      value: Sandbox Agent
+    - name: AUTH_TOKEN
+      example: mysecrettoken

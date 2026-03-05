@@ -1,0 +1,58 @@
+[
+  {
+    "name": "checkout_project",
+    "description": "Clone a git repository into the workspace. Supports GitHub, GitLab (cloud or self-hosted), and any HTTPS/SSH remote."
+  },
+  {
+    "name": "list_projects",
+    "description": "List all projects (repositories) currently checked out in the workspace."
+  },
+  {
+    "name": "remove_project",
+    "description": "Remove a project from the workspace (deletes the directory)."
+  },
+  {
+    "name": "git_status",
+    "description": "Show the git status of a project (current branch, modified files, staged changes, etc.)."
+  },
+  {
+    "name": "git_pull",
+    "description": "Pull the latest changes from the remote for a project."
+  },
+  {
+    "name": "git_log",
+    "description": "Show recent commit history for a project."
+  },
+  {
+    "name": "create_branch",
+    "description": "Create a new git branch in a project and optionally push it to origin."
+  },
+  {
+    "name": "checkout_branch",
+    "description": "Switch to an existing branch in a project."
+  },
+  {
+    "name": "list_branches",
+    "description": "List local or remote branches in a project."
+  },
+  {
+    "name": "read_file",
+    "description": "Read the contents of a file in a project."
+  },
+  {
+    "name": "write_file",
+    "description": "Create or overwrite a file in a project."
+  },
+  {
+    "name": "list_directory",
+    "description": "List the contents of a directory in a project."
+  },
+  {
+    "name": "search_files",
+    "description": "Search for files matching a glob pattern in a project (node_modules and .git excluded)."
+  },
+  {
+    "name": "bash",
+    "description": "Execute a shell command inside the container, scoped to a project directory. Use for builds, tests, linters, package managers, etc."
+  }
+]
