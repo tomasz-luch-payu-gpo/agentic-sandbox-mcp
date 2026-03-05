@@ -1,0 +1,38 @@
+services:
+  mcp-sandbox:
+    build: .
+    container_name: mcp-sandbox
+    ports:
+      # Expose only when using HTTP transport
+      - "3000:3000"
+    volumes:
+      - workspace:/workspace
+    environment:
+      # Transport mode: "stdio" or "http"
+      MCP_TRANSPORT: ${MCP_TRANSPORT:-http}
+      PORT: ${PORT:-3000}
+
+      # --- GitLab ---
+      # Self-hosted GitLab base URL (e.g. https://gitlab.mycompany.com)
+      GITLAB_URL: ${GITLAB_URL:-}
+      # Personal Access Token with api + read_repository + write_repository scopes
+      GITLAB_TOKEN: ${GITLAB_TOKEN:-}
+
+      # --- Optional HTTP auth ---
+      AUTH_TOKEN: ${AUTH_TOKEN:-}
+
+      # --- Git commit identity inside container ---
+      GIT_EMAIL: ${GIT_EMAIL:-sandbox@localhost}
+      GIT_USER: ${GIT_USER:-Sandbox Agent}
+
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  workspace:
+    name: mcp-sandbox-workspace
