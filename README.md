@@ -178,6 +178,99 @@ docker run --rm -v mcp-sandbox-workspace:/ws -v $(pwd):/backup alpine \
 
 ---
 
+## GitHub Copilot CLI
+
+GitHub Copilot CLI stores MCP server configuration in `~/.copilot/mcp-config.json`. You can also use `/mcp add` interactively inside a Copilot CLI session, or drop a `.vscode/mcp.json` in a project for workspace-scoped config.
+
+### Option A — HTTP transport (persistent container)
+
+Start the server first:
+
+```bash
+docker compose up --build -d
+```
+
+Then add to `~/.copilot/mcp-config.json`:
+
+```json
+{
+  "mcpServers": {
+    "sandbox": {
+      "type": "http",
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}
+```
+
+With `AUTH_TOKEN` set:
+
+```json
+{
+  "mcpServers": {
+    "sandbox": {
+      "type": "http",
+      "url": "http://localhost:3000/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_AUTH_TOKEN"
+      }
+    }
+  }
+}
+```
+
+### Option B — stdio transport (Docker, per-session)
+
+```json
+{
+  "mcpServers": {
+    "sandbox": {
+      "type": "stdio",
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "-v", "mcp-sandbox-workspace:/workspace",
+        "-e", "GITLAB_URL=https://gitlab.mycompany.com",
+        "-e", "GITLAB_TOKEN=glpat-xxxx",
+        "-e", "GIT_EMAIL=me@example.com",
+        "-e", "GIT_USER=My Name",
+        "agentic-sandbox-mcp"
+      ]
+    }
+  }
+}
+```
+
+Copilot CLI will start and stop the container automatically each session.
+
+### Option C — workspace-scoped (`.vscode/mcp.json`)
+
+Place this file in your project root so the server is only active for that workspace:
+
+```json
+{
+  "servers": {
+    "sandbox": {
+      "type": "stdio",
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "-v", "mcp-sandbox-workspace:/workspace",
+        "-e", "GITLAB_URL=https://gitlab.mycompany.com",
+        "-e", "GITLAB_TOKEN=${GITLAB_TOKEN}",
+        "-e", "GIT_EMAIL=me@example.com",
+        "-e", "GIT_USER=My Name",
+        "agentic-sandbox-mcp"
+      ]
+    }
+  }
+}
+```
+
+Verify inside Copilot CLI with `/mcp show` — you should see `sandbox` listed as connected.
+
+---
+
 ## Docker Desktop Gordon AI integration
 
 Docker Desktop 4.42+ includes **Gordon**, an AI agent that reads a `gordon-mcp.yml` file in your working directory to discover MCP servers.
