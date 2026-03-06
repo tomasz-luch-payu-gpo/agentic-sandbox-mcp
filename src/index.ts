@@ -269,7 +269,9 @@ async function startHttp(): Promise<void> {
         await server.connect(transport);
       }
 
-      await transport.handleRequest(req, res, await readBody(req));
+      const rawBody = await readBody(req);
+      const parsedBody = rawBody.length > 0 ? JSON.parse(rawBody.toString()) : undefined;
+      await transport.handleRequest(req, res, parsedBody);
       return;
     }
 
