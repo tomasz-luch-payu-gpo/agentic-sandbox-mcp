@@ -18,6 +18,10 @@ services:
       # Personal Access Token with api + read_repository + write_repository scopes
       GITLAB_TOKEN: ${GITLAB_TOKEN:-}
 
+      # --- GitHub ---
+      # Personal Access Token with repo scope (for create_merge_request on GitHub repos)
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+
       # --- Optional HTTP auth ---
       AUTH_TOKEN: ${AUTH_TOKEN:-}
 

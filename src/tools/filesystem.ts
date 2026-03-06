@@ -2,8 +2,27 @@ import * as fs from "fs";
 import * as path from "path";
 import { resolveFilePath, resolveProjectPath, WORKSPACE_DIR } from "../workspace.js";
 
-export function readFile(args: { project: string; path: string }): string {
-  const filePath = resolveFilePath(args.project, args.path);
+/**
+ * Resolves the absolute path for a file operation.
+ * If project is given, resolves relative to that project directory.
+ * If project is omitted and filePath is absolute (starting with /workspace),
+ * allows direct access to any path under WORKSPACE_DIR.
+ */
+function resolveAnyFilePath(project: string | undefined, filePath: string): string {
+  if (project) {
+    return resolveFilePath(project, filePath);
+  }
+  // Absolute path mode — must stay within workspace
+  const absPath = path.resolve(filePath);
+  const wsRoot = path.resolve(WORKSPACE_DIR);
+  if (!absPath.startsWith(wsRoot + path.sep) && absPath !== wsRoot) {
+    throw new Error(`Path "${filePath}" is outside the workspace. Only paths under ${WORKSPACE_DIR} are allowed.`);
+  }
+  return absPath;
+}
+
+export function readFile(args: { project?: string; path: string }): string {
+  const filePath = resolveAnyFilePath(args.project, args.path);
   if (!fs.existsSync(filePath)) {
     throw new Error(`File not found: ${args.path}`);
   }
@@ -18,8 +37,8 @@ export function readFile(args: { project: string; path: string }): string {
   return fs.readFileSync(filePath, "utf-8");
 }
 
-export function writeFile(args: { project: string; path: string; content: string }): string {
-  const filePath = resolveFilePath(args.project, args.path);
+export function writeFile(args: { project?: string; path: string; content: string }): string {
+  const filePath = resolveAnyFilePath(args.project, args.path);
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, args.content, "utf-8");
   return `Written ${args.content.length} chars to ${args.path}`;

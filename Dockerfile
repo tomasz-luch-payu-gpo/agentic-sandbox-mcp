@@ -14,7 +14,14 @@ RUN npm run build
 FROM node:20-alpine
 
 # git + ssh for cloning repos; bash for the shell tool
-RUN apk add --no-cache git openssh-client bash
+# openjdk21-jdk for Java projects; maven for Maven builds; curl for HTTP calls
+RUN apk add --no-cache \
+    git \
+    openssh-client \
+    bash \
+    curl \
+    openjdk21-jdk \
+    maven
 
 WORKDIR /app
 COPY package*.json ./
