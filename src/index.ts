@@ -4,6 +4,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { z } from "zod";
 import * as http from "http";
 import { randomUUID } from "crypto";
+import simpleGit from "simple-git";
 
 import {
   checkoutProject,
@@ -15,6 +16,9 @@ import {
   createBranch,
   gitCheckoutBranch,
   listBranches,
+  gitCommit,
+  gitPush,
+  createMergeRequest,
 } from "./tools/git.js";
 import { readFile, writeFile, listDirectory, searchFiles } from "./tools/filesystem.js";
 import { bash } from "./tools/shell.js";
@@ -39,6 +43,7 @@ function buildServer(): McpServer {
       name: z.string().optional().describe("Local project folder name (defaults to repo name)"),
       branch: z.string().optional().describe("Branch or tag to checkout (defaults to default branch)"),
       token: z.string().optional().describe("Personal access token for private repos (overrides GITLAB_TOKEN env)"),
+      insecure: z.boolean().optional().describe("Disable SSL certificate verification (use for self-signed certs, default false)"),
     },
     async (args) => {
       const text = await checkoutProject(args);
@@ -147,14 +152,60 @@ function buildServer(): McpServer {
     }
   );
 
+  server.tool(
+    "git_commit",
+    "Stage all changes and create a git commit in a project.",
+    {
+      project: z.string().describe("Project name"),
+      message: z.string().describe("Commit message"),
+      add: z.boolean().optional().describe("Stage all modified/new files before committing (git add .), default true"),
+    },
+    async (args) => {
+      const text = await gitCommit({ ...args, add: args.add ?? true });
+      return { content: [{ type: "text", text }] };
+    }
+  );
+
+  server.tool(
+    "git_push",
+    "Push the current branch (or a specified branch) of a project to origin.",
+    {
+      project: z.string().describe("Project name"),
+      branch: z.string().optional().describe("Branch to push (defaults to current branch)"),
+      force: z.boolean().optional().describe("Force push using --force-with-lease (default false)"),
+    },
+    async (args) => {
+      const text = await gitPush(args);
+      return { content: [{ type: "text", text }] };
+    }
+  );
+
+  server.tool(
+    "create_merge_request",
+    "Create a GitLab Merge Request or GitHub Pull Request for a project. Detects provider from the origin remote URL automatically.",
+    {
+      project: z.string().describe("Project name"),
+      title: z.string().describe("MR/PR title"),
+      sourceBranch: z.string().optional().describe("Source branch (defaults to current branch)"),
+      targetBranch: z.string().optional().describe("Target/base branch (defaults to repo default branch)"),
+      description: z.string().optional().describe("MR/PR description body"),
+      token: z.string().optional().describe("API token (overrides GITLAB_TOKEN / GITHUB_TOKEN env)"),
+      insecure: z.boolean().optional().describe("Skip SSL verification for self-hosted GitLab (default false)"),
+    },
+    async (args) => {
+      const text = await createMergeRequest(args);
+      return { content: [{ type: "text", text }] };
+    }
+  );
+
   // --- Filesystem tools ---
 
   server.tool(
     "read_file",
-    "Read the contents of a file in a project.",
+    "Read the contents of a file in a project. Omit project and use an absolute path under /workspace to read temp/generated files not tied to a specific project.",
     {
-      project: z.string().describe("Project name"),
-      path: z.string().describe("File path relative to project root"),
+      project: z.string().optional().describe("Project name (omit to use an absolute path)"),
+      path: z.string().describe("File path relative to project root, or absolute path under /workspace when project is omitted"),
     },
     async (args) => {
       const text = readFile(args);
@@ -164,10 +215,10 @@ function buildServer(): McpServer {
 
   server.tool(
     "write_file",
-    "Create or overwrite a file in a project.",
+    "Create or overwrite a file in a project. Omit project and use an absolute path under /workspace to write temp/generated files not tied to a specific project.",
     {
-      project: z.string().describe("Project name"),
-      path: z.string().describe("File path relative to project root"),
+      project: z.string().optional().describe("Project name (omit to use an absolute path)"),
+      path: z.string().describe("File path relative to project root, or absolute path under /workspace when project is omitted"),
       content: z.string().describe("File content"),
     },
     async (args) => {
@@ -219,6 +270,23 @@ function buildServer(): McpServer {
   );
 
   return server;
+}
+
+// ---------------------------------------------------------------------------
+// Configure global git identity from environment (applies container-wide)
+// ---------------------------------------------------------------------------
+
+async function configureGitIdentity(): Promise<void> {
+  const email = process.env.GIT_EMAIL ?? "sandbox@localhost";
+  const name = process.env.GIT_USER ?? "Sandbox Agent";
+  try {
+    const git = simpleGit();
+    await git.addConfig("user.email", email, false, "global");
+    await git.addConfig("user.name", name, false, "global");
+  } catch {
+    // Non-fatal — identity is also set per-repo in checkoutProject
+  }
+  process.stderr.write(`Git identity: ${name} <${email}>\n`);
 }
 
 // ---------------------------------------------------------------------------
@@ -303,14 +371,16 @@ function readBody(req: http.IncomingMessage): Promise<Buffer> {
 // Entry
 // ---------------------------------------------------------------------------
 
-if (TRANSPORT === "http") {
-  startHttp().catch((e) => {
-    process.stderr.write(`Fatal: ${e}\n`);
-    process.exit(1);
-  });
-} else {
-  startStdio().catch((e) => {
-    process.stderr.write(`Fatal: ${e}\n`);
-    process.exit(1);
-  });
+async function main(): Promise<void> {
+  await configureGitIdentity();
+  if (TRANSPORT === "http") {
+    await startHttp();
+  } else {
+    await startStdio();
+  }
 }
+
+main().catch((e) => {
+  process.stderr.write(`Fatal: ${e}\n`);
+  process.exit(1);
+});
